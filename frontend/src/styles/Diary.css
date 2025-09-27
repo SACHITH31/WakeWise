@@ -1,0 +1,253 @@
+.diary-container {
+  max-width: 900px;
+  margin: 50px auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  color: #2c3e50;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.diary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 40px;
+}
+
+.diary-form input[type="text"],
+.diary-form textarea {
+  padding: 12px 16px;
+  font-size: 1.15rem;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  resize: vertical;
+}
+
+.diary-form button {
+  background-color: #0077ff;
+  color: white;
+  font-weight: bold;
+  font-size: 1.15rem;
+  border: none;
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  align-self: flex-start;
+}
+
+.diary-form button:hover {
+  background-color: #005bb5;
+}
+
+.diary-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.diary-entry {
+  background-color: white;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+  padding: 24px 32px;
+}
+
+.diary-entry h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #0077ff;
+}
+
+.diary-entry p {
+  white-space: pre-wrap;
+  font-size: 1rem;
+  color: #444;
+  line-height: 1.5;
+}
+
+.entry-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+}
+
+.entry-actions button {
+  background-color: #0077ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.entry-actions button:hover {
+  background-color: #005bb5;
+}
+.diary-container {
+  max-width: 900px;
+  margin: 50px auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  color: #2c3e50;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.diary-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.diary-entry-preview {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 22px 28px;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+}
+
+.diary-entry-preview:hover {
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.preview-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 10px 0;
+  color: #555;
+  white-space: normal;
+  text-overflow: ellipsis;
+}
+
+.entry-date {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.diary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.diary-form input[type="text"],
+.diary-form textarea {
+  padding: 14px 18px;
+  font-size: 1.15rem;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  resize: vertical;
+}
+
+.diary-form button,
+.entry-actions button {
+  background-color: #0077ff;
+  color: white;
+  font-weight: bold;
+  font-size: 1.15rem;
+  border: none;
+  border-radius: 10px;
+  padding: 16px 25px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  align-self: flex-start;
+  margin-right: 10px;
+}
+
+.diary-form button:hover,
+.entry-actions button:hover {
+  background-color: #005bb5;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.add-entry-btn {
+  display: inline-block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 12px 24px;
+  background-color: #0077ff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 25px;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,123,255,0.4);
+}
+
+.add-entry-btn:hover {
+  background-color: #005bb5;
+  box-shadow: 0 6px 18px rgba(0,91,181,0.6);
+}
+
+/* Bottom Navigation styles */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px 0;
+  display: flex;
+  justify-content: space-around;
+  z-index: 10;
+}
+
+.bottom-nav button {
+  background: none;
+  border: none;
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.bottom-nav button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+.diary-search-input {
+  width: 100%;
+  max-width: 480px;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  border: 2px solid #ccc;
+  box-shadow: 0 0 5px #aacdff;
+  outline: none;
+  transition: border-color 0.3s ease;
+  margin-right: 5px;
+}
+
+.diary-search-input:focus {
+  border-color: #0077ff;
+}
+
+.no-entries {
+  text-align: center;
+  margin: 50px 0;
+  font-style: italic;
+  color: #888;
+}

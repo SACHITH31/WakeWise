@@ -1,195 +1,231 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { FaTrash } from "react-icons/fa"; // Trash icon for delete
 import "../styles/Alarm.css";
+
+const DAYS = [
+  "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday","Weekend"
+];
 
 const Alarm = () => {
   const [alarms, setAlarms] = useState([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingAlarm, setEditingAlarm] = useState(null);
-  const [formData, setFormData] = useState({
-    time: "",
-    days: "",
-    message: "",
-    enabled: true,
-  });
+  const [time, setTime] = useState("");
+  const [selectedDays, setSelectedDays] = useState([]);
+  const [message, setMessage] = useState("");
+  const [sound, setSound] = useState("");
+  const [enabled, setEnabled] = useState(true);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Fetch alarms
+  useEffect(() => { fetchAlarms(); }, []);
+
   const fetchAlarms = () => {
-    fetch("http://localhost:5000/api/alarms")
-      .then((res) => res.json())
-      .then(setAlarms)
-      .catch(console.error);
+    fetch("http://localhost:5000/api/alarms", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => setAlarms(Array.isArray(data) ? data : []))
+      .catch(() => setAlarms([]));
   };
 
-  useEffect(() => {
-    fetchAlarms();
-  }, []);
-
-  // Handle form input change
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+  const toggleDay = day => {
+    setSelectedDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    );
   };
 
-  // Open Add Alarm form
-  const openAddForm = () => {
-    setEditingAlarm(null);
-    setFormData({
-      time: "",
-      days: "",
-      message: "",
-      enabled: true,
-    });
-    setIsFormOpen(true);
+  const resetForm = () => {
+    setTime("");
+    setSelectedDays([]);
+    setMessage("");
+    setSound("");
+    setEnabled(true);
+    setError(null);
+    setSubmitting(false);
   };
 
-  // Open Edit Alarm form
-  const openEditForm = (alarm) => {
-    setEditingAlarm(alarm);
-    setFormData({
-      time: alarm.time,
-      days: alarm.days,
-      message: alarm.message,
-      enabled: alarm.enabled,
-    });
-    setIsFormOpen(true);
-  };
-
-  // Close form modal
-  const closeForm = () => {
-    setIsFormOpen(false);
-  };
-
-  // Submit form (Add or Edit)
-  const handleSubmit = (e) => {
+  const addAlarm = (e) => {
     e.preventDefault();
-    const method = editingAlarm ? "PUT" : "POST";
-    const url = editingAlarm
-      ? `http://localhost:5000/api/alarms/${editingAlarm.id}`
-      : "http://localhost:5000/api/alarms";
+    setError(null);
 
-    fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    }).then(res => {
-      if (!res.ok) throw new Error("Failed to save alarm");
-      closeForm();
-      fetchAlarms();
-    }).catch(err => alert(err.message));
-  };
+    if (!time) return setError("Please select a time.");
+    if (selectedDays.length === 0) return setError("Please select at least one day.");
 
-  // Toggle enabled status
-  const toggleEnabled = (id, currentStatus) => {
-    fetch(`http://localhost:5000/api/alarms/${id}`, {
-      method: "PUT",
+    const isDuplicate = alarms.some(a =>
+      a.time === time &&
+      a.days.split(/[,|]/).map(d => d.trim()).sort().join(",") === selectedDays.slice().sort().join(",")
+    );
+    if (isDuplicate) return setError("Alarm for this time and days already exists.");
+
+    setSubmitting(true);
+
+    const alarmData = {
+      time,
+      days: selectedDays.join("|"),
+      message,
+      sound,
+      enabled
+    };
+
+    fetch("http://localhost:5000/api/alarms", {
+      method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: !currentStatus }),
+      body: JSON.stringify(alarmData)
     })
       .then(res => {
-        if (!res.ok) throw new Error("Failed to update alarm");
+        setSubmitting(false);
+        if (!res.ok) return res.text().then(txt => { throw new Error(txt || "Failed to add alarm"); });
+        return res.json();
+      })
+      .then(() => {
+        fetchAlarms();
+        resetForm();
+      })
+      .catch(err => setError(err.message || "Failed to add alarm"));
+  };
+
+  const toggleAlarmStatus = (alarm) => {
+    const updatedAlarm = { ...alarm, enabled: !alarm.enabled };
+    fetch(`http://localhost:5000/api/alarms/${alarm.id}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedAlarm)
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to update status");
         return res.json();
       })
       .then(() => fetchAlarms())
-      .catch(err => alert(err.message));
+      .catch(err => setError(err.message || "Failed to update status"));
   };
 
-  // Delete alarm
   const deleteAlarm = (id) => {
     if (!window.confirm("Are you sure you want to delete this alarm?")) return;
-    fetch(`http://localhost:5000/api/alarms/${id}`, { method: "DELETE" })
-      .then(() => fetchAlarms())
-      .catch(err => alert(err.message));
+    fetch(`http://localhost:5000/api/alarms/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to delete alarm");
+        fetchAlarms();
+      })
+      .catch(err => setError(err.message || "Failed to delete alarm"));
   };
 
   return (
-    <div className="alarm-container">
-      <h1>Alarm List</h1>
-      <button className="btn-add" onClick={openAddForm}>+ Add Alarm</button>
+    <div className="alarm-screen">
+      <h1 className="alarm-header">My Alarms</h1>
 
-      {alarms.length > 0 ? (
-        <ul className="alarm-list">
-          {alarms.map(({ id, time, days, message, enabled }) => (
-            <li key={id} className="alarm-item">
-              <div className="alarm-time">{time}</div>
-              <div className="alarm-days">{days}</div>
-              <div className="alarm-message">{message}</div>
-              <div className="alarm-actions">
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={enabled}
-                    onChange={() => toggleEnabled(id, enabled)}
-                  />
-                  <span className="slider round"></span>
-                </label>
-                <button className="btn-edit" onClick={() => openEditForm({id, time, days, message, enabled})}>Edit</button>
-                <button className="btn-delete" onClick={() => deleteAlarm(id)}>Delete</button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No alarms set yet.</p>
-      )}
-
-      {/* Modal form for add/edit */}
-      {isFormOpen && (
-        <div className="modal-overlay" onClick={closeForm}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>{editingAlarm ? "Edit Alarm" : "Add Alarm"}</h2>
-            <form onSubmit={handleSubmit}>
-              <label>
-                Time:
-                <input
-                  type="time"
-                  name="time"
-                  value={formData.time}
-                  onChange={handleChange}
-                  required
-                />
-              </label>
-              <label>
-                Days (comma separated, e.g. Mon,Tue):
-                <input
-                  type="text"
-                  name="days"
-                  value={formData.days}
-                  onChange={handleChange}
-                  placeholder="Mon,Tue,Wed"
-                  required
-                />
-              </label>
-              <label>
-                Message:
-                <input
-                  type="text"
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  placeholder="Wake up!"
-                />
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  name="enabled"
-                  checked={formData.enabled}
-                  onChange={handleChange}
-                />
-                Enabled
-              </label>
-
-              <div className="form-buttons">
-                <button type="submit" className="btn-save">{editingAlarm ? "Update" : "Add"}</button>
-                <button type="button" className="btn-cancel" onClick={closeForm}>Cancel</button>
-              </div>
-            </form>
-          </div>
+      <form className="alarm-form" onSubmit={addAlarm} noValidate>
+        <div className="form-group">
+          <label htmlFor="time-picker" className="input-label">Time</label>
+          <input
+            id="time-picker"
+            type="time"
+            value={time}
+            onChange={e => setTime(e.target.value)}
+            className="alarm-input"
+          />
         </div>
-      )}
+
+        <div className="form-group days-pills">
+          {DAYS.map(day => (
+            <button
+              type="button"
+              key={day}
+              className={`day-pill ${selectedDays.includes(day) ? "selected" : ""}`}
+              onClick={() => toggleDay(day)}
+              aria-pressed={selectedDays.includes(day)}
+              tabIndex={0}
+            >
+              {day}
+            </button>
+          ))}
+        </div>
+
+        <div className="form-row">
+          <input
+            type="text"
+            placeholder="Message"
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            className="alarm-input message-input"
+          />
+          <input
+            type="text"
+            placeholder="Sound"
+            value={sound}
+            onChange={e => setSound(e.target.value)}
+            className="alarm-input sound-input"
+          />
+        </div>
+
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={e => setEnabled(e.target.checked)}
+          />
+          Enabled
+        </label>
+
+        {error && <div className="error-msg">{error}</div>}
+
+        <button className="alarm-submit-btn" disabled={submitting}>
+          {submitting ? "Adding..." : "Add Alarm"}
+        </button>
+      </form>
+
+      <section className="alarm-list-section">
+        {alarms.length > 0 ? (
+          <table className="alarm-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Days</th>
+                <th>Message</th>
+                <th>Sound</th>
+                <th>Status</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody>
+              {alarms.map(alarm => (
+                <tr key={alarm.id}>
+                  <td>{alarm.time}</td>
+                  <td className="days-list">
+                    {alarm.days.split(/[,|]/).map(d => (
+                      <span key={d} className="day-pill-table">{d.trim()}</span>
+                    ))}
+                  </td>
+                  <td>{alarm.message}</td>
+                  <td>{alarm.sound}</td>
+                  <td>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={alarm.enabled}
+                        onChange={() => toggleAlarmStatus(alarm)}
+                      />
+                      <span className="slider round"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => deleteAlarm(alarm.id)}
+                      className="delete-btn"
+                      aria-label="Delete alarm"
+                    >
+                      <FaTrash size={18} color="#e74c3c" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="no-alarms-msg">No alarms found.</div>
+        )}
+      </section>
     </div>
   );
 };

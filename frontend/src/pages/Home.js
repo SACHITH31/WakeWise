@@ -1,70 +1,86 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import { FaUser, FaTasks, FaBell, FaBook, FaStickyNote } from "react-icons/fa";
 import "../styles/Home.css";
 
 const Home = () => {
-  const [greeting, setGreeting] = useState("");
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [nextAlarm, setNextAlarm] = useState(null);
-  const [todoStats, setTodoStats] = useState({ total: 0, completed: 0 });
+  const [completedTasks, setCompletedTasks] = useState(0);
   const [quote, setQuote] = useState("");
 
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Good Morning");
-    else if (hour < 18) setGreeting("Good Afternoon");
-    else setGreeting("Good Evening");
-  }, []);
+    if (!user) {
+      navigate("/login");
+      return;
+    }
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/alarms/next")
+    fetch("http://localhost:5000/api/alarms", { credentials: "include" })
       .then((res) => res.json())
-      .then((data) => setNextAlarm(data))
-      .catch(() => {
-        setNextAlarm({ time: "07:30 AM", message: "Wake up!" });
-      });
-  }, []);
+      .then((alarms) => {
+        const now = new Date();
+        const upcoming = alarms
+          .map((alarm) => ({ ...alarm, timeObj: new Date(`1970-01-01T${alarm.time}`) }))
+          .filter((alarm) => alarm.timeObj > now)
+          .sort((a, b) => a.timeObj - b.timeObj);
+        setNextAlarm(upcoming[0] || null);
+      })
+      .catch(() => setNextAlarm(null));
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/todos/today/stats")
+    fetch("http://localhost:5000/api/todos", { credentials: "include" })
       .then((res) => res.json())
-      .then(setTodoStats)
-      .catch(() => {
-        setTodoStats({ total: 5, completed: 2 });
-      });
-  }, []);
+      .then((todos) => {
+        const doneTasks = todos.filter((todo) => todo.done).length;
+        setCompletedTasks(doneTasks);
+      })
+      .catch(() => setCompletedTasks(0));
 
-  useEffect(() => {
-    fetch("https://api.quotable.io/random?tags=motivational")
+    fetch("https://zenquotes.io/api/random")
       .then((res) => res.json())
-      .then((data) => setQuote(data.content))
-      .catch(() => {
-        setQuote("The only way to do great work is to love what you do.");
-      });
-  }, []);
+      .then((data) => {
+        if (data && data[0] && data[0].q) {
+          setQuote(data[0].q);
+        } else {
+          setQuote("Stay motivated and keep going!");
+        }
+      })
+      .catch(() => setQuote("Stay motivated and keep going!"));
+  }, [user, navigate]);
 
-  const handleAddAlarm = () => alert("Add Alarm clicked");
-  const handleAddNote = () => alert("Add Note clicked");
-  const handleAddTodo = () => alert("Add To-Do clicked");
+  // Function to check if nav link is active
+  const isActive = (path) => location.pathname === path;
 
   return (
     <div className="home-container">
-      <h1>{greeting}, User!</h1>
+      <h1>
+        Welcome back{user ? `, ${user.username ?? user.displayName ?? "User"}` : ""}!
+      </h1>
 
       <div className="home-panel home-alarm-panel">
         <h3>Next Alarm</h3>
         {nextAlarm ? (
-          <div>
-            <strong>{nextAlarm.time}</strong> - {nextAlarm.message}
-          </div>
+          <p>
+            <strong>{nextAlarm.time}</strong>
+            {nextAlarm.label ? ` - ${nextAlarm.label}` : ""}
+          </p>
         ) : (
-          <div>No upcoming alarms</div>
+          <p>No upcoming alarms</p>
         )}
+        <Link to="/alarms" className="home-action-button">
+          Manage Alarms
+        </Link>
       </div>
 
       <div className="home-panel home-todo-summary">
-        <h3>Today's To-Do Summary</h3>
-        <div>
-          {todoStats.completed} of {todoStats.total} tasks completed
-        </div>
+        <h3>Tasks Completed Today</h3>
+        <p>{completedTasks}</p>
+        <Link to="/todos" className="home-action-button">
+          View Todos
+        </Link>
       </div>
 
       <div className="home-panel home-quote-box">
@@ -72,17 +88,29 @@ const Home = () => {
         <p className="home-quote-text">"{quote}"</p>
       </div>
 
-      <div className="home-quick-actions">
-        <button className="home-action-button" onClick={handleAddAlarm}>
-          + Add Alarm
-        </button>
-        <button className="home-action-button" onClick={handleAddNote}>
-          + Add Note
-        </button>
-        <button className="home-action-button" onClick={handleAddTodo}>
-          + Add To-Do
-        </button>
-      </div>
+      {/* Bottom fixed navigation */}
+      <nav className="bottom-nav">
+        <Link to="/profile" className={isActive("/profile") ? "nav-link active" : "nav-link"}>
+          <FaUser size={24} />
+          <span>Profile</span>
+        </Link>
+        <Link to="/todos" className={isActive("/todos") ? "nav-link active" : "nav-link"}>
+          <FaTasks size={24} />
+          <span>Todos</span>
+        </Link>
+        <Link to="/alarms" className={isActive("/alarms") ? "nav-link active" : "nav-link"}>
+          <FaBell size={24} />
+          <span>Alarms</span>
+        </Link>
+        <Link to="/diary" className={isActive("/diary") ? "nav-link active" : "nav-link"}>
+          <FaBook size={24} />
+          <span>Diary</span>
+        </Link>
+        <Link to="/notes" className={isActive("/notes") ? "nav-link active" : "nav-link"}>
+          <FaStickyNote size={24} />
+          <span>Notes</span>
+        </Link>
+      </nav>
     </div>
   );
 };

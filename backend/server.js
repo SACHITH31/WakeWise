@@ -1,57 +1,47 @@
-// backend/server.js
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2");
-require("dotenv").config();
+const session = require("express-session");
+const passport = require("./config/passport"); // Make sure configured correctly
+const authRoutes = require("./routes/auth");
+const diaryRoutes = require("./routes/diary");
+const alarmsRoutes = require("./routes/alarms");
 
 const app = express();
-const port = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Enable CORS and accept credentials for frontend at localhost:3000
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
-// Create MySQL connection pool
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "secret_key_here",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24,
+    },
+  })
+);
 
-// Test database connection
-pool.getConnection((err, connection) => {
-  if (err) {
-    console.error("Error connecting to MySQL:", err);
-  } else {
-    console.log("Connected to MySQL database");
-    connection.release();
-  }
-});
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Export pool for use in routes
-module.exports = pool;
+// Mount routes AFTER session and passport middlewares
+app.use("/auth", authRoutes);
+app.use("/api/diary", diaryRoutes);
+app.use("/api/alarms", alarmsRoutes);
 
-// Import routes
-const userRoutes = require("./routes/users");
-const alarmRoutes = require("./routes/alarms");
-const notesRoutes = require("./routes/notes");
-const todoRoutes = require("./routes/todos");
-
-// Mount routes
-app.use("/api/users", userRoutes);
-app.use("/api/alarms", alarmRoutes);
-app.use("/api/notes", notesRoutes);
-app.use("/api/todos", todoRoutes);
-
-// Basic test route
-app.get("/", (req, res) => {
-  res.send("WakeWise Backend Running with MySQL");
-});
-
-// Start server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
