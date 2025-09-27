@@ -6,16 +6,18 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/auth/user", {
-      credentials: "include",
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Not authenticated");
-        return res.json();
+    fetch("http://localhost:5000/auth/user", { credentials: "include" })
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) setUser(data.user);
+        else setUser(null);
       })
-      .then(({ user }) => setUser(user))
       .catch(() => setUser(null));
   }, []);
 
-  return <AuthContext.Provider value={{ user, setUser }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, setUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

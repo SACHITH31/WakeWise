@@ -1,15 +1,16 @@
 import React, { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import "../styles/Profile.css"; // Import CSS for styling
+import LogoutButton from "./LogoutButton";
+import '../styles/Profile.css';
 
 const Profile = () => {
   const { user } = useContext(AuthContext);
 
-  if (!user) return <p>Loading...</p>;
+  if(!user) return <p>Loading...</p>;
 
   return (
     <div className="profile-container">
-      <h1>Profile</h1>
+       <h1>Profile</h1>
       {user.avatar_url && (
         <img
           src={user.avatar_url}
@@ -17,14 +18,9 @@ const Profile = () => {
           className="profile-avatar"
         />
       )}
-      <div className="profile-details">
-        <p>
-          <strong>Username:</strong> {user.username || user.displayName || "No username"}
-        </p>
-        <p>
-          <strong>Email:</strong> {user.email || "No email available"}
-        </p>
-      </div>
+      <h2>Username: {user.display_name ||  "User"}</h2>
+      <h2>Email: {user.email}</h2>
+      <LogoutButton />
     </div>
   );
 };

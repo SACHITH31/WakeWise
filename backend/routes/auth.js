@@ -33,4 +33,15 @@ router.get("/failure", (req, res) => {
   res.status(401).send("Authentication failed");
 });
 
+router.get("/logout", (req, res) => {
+  req.logout(() => {
+    req.session.destroy(err => {
+      if (err) console.log(err);
+      res.clearCookie("connect.sid");
+      res.json({ success: true, message: "Logged out successfully" });
+    });
+  });
+});
+
+
 module.exports = router;

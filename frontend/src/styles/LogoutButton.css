@@ -1,0 +1,143 @@
+/* LogoutButton.css */
+
+button {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(255, 77, 79, 0.5);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+button:hover {
+  background-color: #d9363e;
+  box-shadow: 0 5px 14px rgba(217, 54, 62, 0.7);
+}
+
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.7);
+}
+
+.logout-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  background-color: #fff;
+  padding: 28px 24px;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  z-index: 1100;
+  text-align: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.logout-popup p {
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 24px;
+  color: #222;
+}
+
+.logout-popup button {
+  margin: 0 12px;
+  padding: 10px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.logout-popup button:first-child {
+  background-color: #ff4d4f;
+  color: white;
+  box-shadow: 0 4px 8px rgba(255, 77, 79, 0.65);
+}
+
+.logout-popup button:first-child:hover {
+  background-color: #d9363e;
+  box-shadow: 0 6px 12px rgba(217, 54, 62, 0.85);
+}
+
+.logout-popup button:last-child {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.logout-popup button:last-child:hover {
+  background-color: #d9d9d9;
+}
+/* Add overlay for blur */
+.logout-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.35);
+  z-index: 1050;
+}
+
+/* Increased size logout popup */
+.logout-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 440px;
+  max-width: 90%;
+  background-color: #fff;
+  padding: 36px 32px;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+  z-index: 1100;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-align: center;
+}
+
+.logout-popup p {
+  font-weight: 700;
+  font-size: 22px;
+  margin-bottom: 28px;
+  color: #222;
+}
+
+.logout-popup button {
+  margin: 0 15px;
+  padding: 14px 34px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.logout-popup button:first-child {
+  background-color: #ff4d4f;
+  color: white;
+  box-shadow: 0 6px 14px rgba(255, 77, 79, 0.75);
+}
+
+.logout-popup button:first-child:hover {
+  background-color: #d9363e;
+  box-shadow: 0 8px 18px rgba(217, 54, 62, 0.9);
+}
+
+.logout-popup button:last-child {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.logout-popup button:last-child:hover {
+  background-color: #d9d9d9;
+}
