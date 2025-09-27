@@ -2,46 +2,52 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
-const passport = require("./config/passport"); // Make sure configured correctly
+const passport = require("./config/passport");
 const authRoutes = require("./routes/auth");
-const diaryRoutes = require("./routes/diary");
 const alarmsRoutes = require("./routes/alarms");
+const diaryRoutes = require("./routes/diary");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS and accept credentials for frontend at localhost:3000
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
+// CORS for frontend
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
 
 app.use(express.json());
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "secret_key_here",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 24,
-    },
-  })
-);
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || "supersecret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+}));
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Mount routes AFTER session and passport middlewares
+// Routes
 app.use("/auth", authRoutes);
-app.use("/api/diary", diaryRoutes);
 app.use("/api/alarms", alarmsRoutes);
+app.use("/api/diary", diaryRoutes);
+
+// Root route redirects to frontend
+app.get("/", (req, res) => {
+  if(req.isAuthenticated && req.isAuthenticated()) {
+    res.redirect("http://localhost:3000/home");
+  } else {
+    res.redirect("http://localhost:3000/login");
+  }
+});
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -1,61 +1,36 @@
+// routes/auth.js
 const express = require("express");
 const router = express.Router();
-const passport = require("../config/passport");
+const passport = require("passport");
 
-router.post("/signup", (req, res, next) => {
-  passport.authenticate("local-signup", (err, user, info) => {
-    if (err) return next(err);
-    if (!user) return res.status(400).json({ message: info.message });
-    req.login(user, (loginErr) => {
-      if (loginErr) return next(loginErr);
-      res.json({ message: "Signup successful", user });
-    });
-  })(req, res, next);
-});
-
-router.post("/login", (req, res, next) => {
-  passport.authenticate("local-login", (err, user, info) => {
-    if (err) return next(err);
-    if (!user) return res.status(400).json({ message: info.message });
-    req.login(user, (loginErr) => {
-      if (loginErr) return next(loginErr);
-      res.json({ message: "Login successful", user });
-    });
-  })(req, res, next);
-});
-
+// Start Google OAuth login
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
-router.get(
-  "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
-  (req, res) => {
-    res.redirect("http://localhost:3000");
-  }
+// Google OAuth callback
+router.get("/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/auth/failure",
+    successRedirect: "/auth/success"
+  })
 );
 
-router.get("/github", passport.authenticate("github"));
-
-router.get(
-  "/github/callback",
-  passport.authenticate("github", { failureRedirect: "/login" }),
-  (req, res) => {
-    res.redirect("http://localhost:3000");
-  }
-);
-
+// Returns logged in user data or 401 if not logged in
 router.get("/user", (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json({ user: req.user });
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    res.json({ success: true, user: req.user });
   } else {
-    res.status(401).json({ user: null });
+    res.status(401).json({ success: false, message: "Not authenticated" });
   }
 });
 
-router.post("/logout", (req, res) => {
-  req.logout(() => {
-    res.json({ message: "Logged out" });
-  });
+// On successful login, redirect frontend to home page
+router.get("/success", (req, res) => {
+  res.redirect("http://localhost:3000/home");
+});
+
+// On login failure, send error
+router.get("/failure", (req, res) => {
+  res.status(401).send("Authentication failed");
 });
 
 module.exports = router;
