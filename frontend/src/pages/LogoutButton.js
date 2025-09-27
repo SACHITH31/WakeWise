@@ -28,7 +28,7 @@ const LogoutButton = () => {
 
   return (
     <>
-      <button onClick={() => setShowConfirm(true)}>Logout</button>
+      <button onClick={() => setShowConfirm(true)} className="logoutButton">Logout</button>
      {showConfirm && (
   <>
     <div className="logout-overlay" onClick={() => setShowConfirm(false)}></div>
