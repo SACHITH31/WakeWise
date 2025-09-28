@@ -1,6 +1,9 @@
 const express = require("express");
 const passport = require("passport");
 const router = express.Router();
+const pool = require("../db");
+const bcrypt = require("bcrypt");
+
 
 // Google OAuth routes
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
@@ -36,6 +39,40 @@ router.get("/user", (req, res) => {
       provider: req.user.google_id ? "google" : (req.user.github_id ? "github" : "local"),
     }
   });
+});
+
+
+router.post("/signup", async (req, res) => {
+  const { username, email, password } = req.body;
+
+  try {
+    // Check if email already exists
+    const [existingUser] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
+    if (existingUser.length > 0) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert new user
+    const result = await pool.query(
+      "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+      [username, email, hashedPassword]
+    );
+
+    // Return the new user info (excluding password)
+    res.status(201).json({
+      user: {
+        id: result[0].insertId,
+        username,
+        email,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error during signup" });
+  }
 });
 
 // Logout route

@@ -4,6 +4,7 @@ const cors = require("cors");
 const session = require("express-session");
 const passport = require("./config/passport");
 const cookieParser = require("cookie-parser");
+const fetch = require("node-fetch");
 
 
 const authRoutes = require("./routes/auth");
@@ -54,11 +55,27 @@ app.use("/api/diary", diaryRoutes);
 app.use("/api/todos", todosRoutes);
 
 // Root route redirects to frontend
+
+
 app.get("/", (req, res) => {
   if(req.isAuthenticated && req.isAuthenticated()) {
     res.redirect("http://localhost:3000/home");
   } else {
     res.redirect("http://localhost:3000/login");
+  }
+});
+
+app.get("/api/quote", async (req, res) => {
+  try {
+    const response = await fetch("https://zenquotes.io/api/random");
+    if (!response.ok) {
+      return res.status(response.status).json({ error: "Failed to fetch quote from external API" });
+    }
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching quote: ", error);
+    res.status(500).json({ error: "Internal Server Error fetching quote" });
   }
 });
 

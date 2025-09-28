@@ -53,16 +53,17 @@ const Home = () => {
       })
       .catch(() => setCompletedTasks(0));
 
-    fetch("https://zenquotes.io/api/random")
-      .then(res => res.json())
-      .then(data => {
-        if (data && data[0] && data[0].q) {
-          setQuote(data[0].q);
-        } else {
-          setQuote("Stay motivated and keep going!");
-        }
-      })
-      .catch(() => setQuote("Stay motivated and keep going!"));
+    fetch("http://localhost:5000/api/quote")
+  .then(res => res.json())
+  .then(data => {
+    if (data && data[0] && data[0].q) {
+      setQuote(data[0].q);
+    } else {
+      setQuote("Stay motivated and keep going!");
+    }
+  })
+  .catch(() => setQuote("Stay motivated and keep going!"));
+
 
     fetch("http://localhost:5000/api/events/upcoming", { credentials: "include" })
       .then(res => res.json())
