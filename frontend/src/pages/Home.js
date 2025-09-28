@@ -205,30 +205,32 @@ const Home = () => {
           <p>No events or reminders for today or tomorrow.</p>
         ) : (
           <ul>
-            {eventsToShow.map((ev) => {
-              const isReminder =
-                ev.reminder_date &&
-                (ev.reminder_date.split("T")[0] === todayStr ||
-                  ev.reminder_date.split("T")[0] === tomorrowStr);
-              const eventDay =
-                ev.event_date === todayStr
-                  ? "Event Today"
-                  : ev.event_date === tomorrowStr
-                  ? "Event Tomorrow"
-                  : null;
-              const reminderDay = isReminder
-                ? ev.reminder_date.split("T")[0] === todayStr
-                  ? `Reminder Today (Event: ${ev.event_date.split("T")[0]})`
-                  : `Reminder Tomorrow (Event: ${ev.event_date.split("T")[0]})`
-                : null;
+  {eventsToShow.map(ev => {
+    const eventDateStr = ev.event_date.split("T")[0];
+    const reminderDateStr = ev.reminder_date ? ev.reminder_date.split("T")[0] : null;
+    const isEvent = eventDateStr === todayStr || eventDateStr === tomorrowStr;
+    const isReminder = reminderDateStr === todayStr || reminderDateStr === tomorrowStr;
 
-              return (
-                <li key={ev.id} className={isReminder ? "reminder" : ""}>
-                  {ev.title} - {eventDay || reminderDay}
-                </li>
-              );
-            })}
-          </ul>
+    return (
+      <li key={ev.id} className={isReminder ? "reminder" : ""} style={{ marginBottom: 4 }}>
+        <h4><i className="eventTitle" style={{ textTransform: "capitalize" }}>{ev.title}</i></h4> -{" "}
+        <em>
+          {isEvent && !isReminder ? // pure event
+            `${eventDateStr === todayStr ? "Today Event" : "Tomorrow Event"} (Event: ${eventDateStr})`
+            : null}
+          {isReminder && !isEvent ? // pure reminder
+            `${reminderDateStr === todayStr ? "Today Reminder" : "Tomorrow Reminder"} (Event: ${eventDateStr})`
+            : null}
+          {isEvent && isReminder ? // both
+            `${eventDateStr === todayStr ? "Today Event" : "Tomorrow Event"} & `
+            + `${reminderDateStr === todayStr ? "Today Reminder" : "Tomorrow Reminder"} (Event: ${eventDateStr})`
+            : null}
+        </em>
+      </li>
+    );
+  })}
+</ul>
+
         )}
       </div>
 
