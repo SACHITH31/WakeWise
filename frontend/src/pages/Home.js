@@ -140,6 +140,30 @@ const Home = () => {
     ) : null;
   };
 
+  // Define today's and tomorrow's date strings (local date)
+  const getLocalDateString = (date) => {
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date - tzOffset).toISOString().slice(0, 10);
+  };
+
+  const todayStr = getLocalDateString(new Date());
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowStr = getLocalDateString(tomorrowDate);
+
+  // Filter events & reminders only for today and tomorrow by comparing only local date parts
+  const eventsToShow = upcomingEvents.filter((ev) => {
+    const eventDateStr = ev.event_date.split("T")[0];
+    const reminderDateStr = ev.reminder_date ? ev.reminder_date.split("T")[0] : null;
+
+    return (
+      eventDateStr === todayStr ||
+      eventDateStr === tomorrowStr ||
+      reminderDateStr === todayStr ||
+      reminderDateStr === tomorrowStr
+    );
+  });
+
   return (
     <div className="home-container">
       <h1>Welcome back{user ? `, ${user.username ?? user.displayName ?? "User"}` : ""}!</h1>
@@ -161,24 +185,31 @@ const Home = () => {
 
       <div className="home-panel home-events-reminders-panel" style={{ marginTop: 20 }}>
         <h3>Events and Reminders for Today and Tomorrow</h3>
-        {upcomingEvents.length === 0 ? (
+        {eventsToShow.length === 0 ? (
           <p>No events or reminders for today or tomorrow.</p>
         ) : (
           <ul>
-            {upcomingEvents.map((ev) => (
-              <li key={ev.id}>
-                {ev.title} -{" "}
-                {ev.event_date === new Date().toISOString().slice(0, 10)
+            {eventsToShow.map((ev) => {
+              const isReminder =
+                ev.reminder_date && (ev.reminder_date.split("T")[0] === todayStr || ev.reminder_date.split("T")[0] === tomorrowStr);
+              const eventDay =
+                ev.event_date === todayStr
                   ? "Event Today"
-                  : ev.event_date === new Date(new Date().setDate(new Date().getDate() + 1))
-                    .toISOString()
-                    .slice(0, 10)
+                  : ev.event_date === tomorrowStr
                   ? "Event Tomorrow"
-                  : ev.reminder_date === new Date().toISOString().slice(0, 10)
-                  ? `Reminder Today (Event: ${ev.event_date})`
-                  : `Reminder Tomorrow (Event: ${ev.event_date})`}
-              </li>
-            ))}
+                  : null;
+              const reminderDay = isReminder
+                ? ev.reminder_date.split("T")[0] === todayStr
+                  ? `Reminder Today (Event: ${ev.event_date.split("T")[0]})`
+                  : `Reminder Tomorrow (Event: ${ev.event_date.split("T")[0]})`
+                : null;
+
+              return (
+                <li key={ev.id} className={isReminder ? "reminder" : ""}>
+                  {ev.title} - {eventDay || reminderDay}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -271,7 +302,29 @@ const Home = () => {
               &times;
             </button>
 
-            <Calendar value={selectedDate} onChange={setSelectedDate} tileContent={tileContent} />
+            <Calendar
+              value={selectedDate}
+              onChange={setSelectedDate}
+              tileContent={({ date, view }) => {
+                if (view !== "month") return null;
+
+                const dateStr = date.toISOString().slice(0, 10);
+                const events = upcomingEvents.filter(
+                  (ev) => ev.event_date === dateStr || ev.reminder_date === dateStr
+                );
+                return events.length > 0 ? (
+                  <div
+                    style={{
+                      backgroundColor: "#007bff",
+                      borderRadius: "50%",
+                      width: 8,
+                      height: 8,
+                      margin: "0 auto",
+                    }}
+                  />
+                ) : null;
+              }}
+            />
 
             <div style={{ marginTop: 15 }}>
               <label>
