@@ -3,11 +3,13 @@ const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
 const passport = require("./config/passport");
+const cookieParser = require("cookie-parser");
+
 
 const authRoutes = require("./routes/auth");
+const eventRoutes = require("./routes/events");
 const alarmsRoutes = require("./routes/alarms");
 const diaryRoutes = require("./routes/diary");
-const eventRoutes = require("./routes/events");
 const todosRoutes = require("./routes/todos");
 
 const app = express();
@@ -19,6 +21,7 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use(cookieParser());
 app.use(express.json());
 
 // Session configuration
@@ -37,11 +40,17 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+
+app.use((req, res, next) => {
+  req.pool = require("./db"); // Adjust path to your db
+  next();
+});
+
 // Routes
 app.use("/auth", authRoutes);
+app.use("/api/events", eventRoutes);
 app.use("/api/alarms", alarmsRoutes);
 app.use("/api/diary", diaryRoutes);
-app.use("/api/events", eventRoutes);
 app.use("/api/todos", todosRoutes);
 
 // Root route redirects to frontend
