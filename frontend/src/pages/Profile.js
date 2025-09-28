@@ -18,7 +18,7 @@ const Profile = () => {
           className="profile-avatar"
         />
       )}
-      <h2>Username: {user.display_name ||  "User"}</h2>
+      <h2>Username: {user.display_name ||  user.username || 'User'}</h2>
       <h2>Email: {user.email}</h2>
       <LogoutButton />
     </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { FaUser, FaTasks, FaBell, FaBook, FaStickyNote } from "react-icons/fa";
 import "../styles/Home.css";
+import BottomNav from "../components/BottomNav.js";
 
 const Home = () => {
   const { user } = useContext(AuthContext);
@@ -89,28 +90,7 @@ const Home = () => {
       </div>
 
       {/* Bottom fixed navigation */}
-      <nav className="bottom-nav">
-        <Link to="/profile" className={isActive("/profile") ? "nav-link active" : "nav-link"}>
-          <FaUser size={24} />
-          <span>Profile</span>
-        </Link>
-        <Link to="/todos" className={isActive("/todos") ? "nav-link active" : "nav-link"}>
-          <FaTasks size={24} />
-          <span>Todos</span>
-        </Link>
-        <Link to="/alarms" className={isActive("/alarms") ? "nav-link active" : "nav-link"}>
-          <FaBell size={24} />
-          <span>Alarms</span>
-        </Link>
-        <Link to="/diary" className={isActive("/diary") ? "nav-link active" : "nav-link"}>
-          <FaBook size={24} />
-          <span>Diary</span>
-        </Link>
-        <Link to="/notes" className={isActive("/notes") ? "nav-link active" : "nav-link"}>
-          <FaStickyNote size={24} />
-          <span>Notes</span>
-        </Link>
-      </nav>
+     <BottomNav />
     </div>
   );
 };

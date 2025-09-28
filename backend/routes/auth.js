@@ -1,47 +1,51 @@
-// routes/auth.js
 const express = require("express");
-const router = express.Router();
 const passport = require("passport");
+const router = express.Router();
 
-// Start Google OAuth login
+// Google OAuth routes
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-
-// Google OAuth callback
 router.get("/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: "/auth/failure",
-    successRedirect: "/auth/success"
-  })
+  passport.authenticate("google", { failureRedirect: "http://localhost:3000/login" }),
+  (req, res) => res.redirect("http://localhost:3000/home")
 );
 
-// Returns logged in user data or 401 if not logged in
+// GitHub OAuth routes
+router.get("/github", passport.authenticate("github", { scope: ["user:email"] }));
+router.get("/github/callback",
+  passport.authenticate("github", { failureRedirect: "http://localhost:3000/login" }),
+  (req, res) => res.redirect("http://localhost:3000/home")
+);
+
+// Current logged in user info endpoint
 router.get("/user", (req, res) => {
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    res.json({ success: true, user: req.user });
-  } else {
-    res.status(401).json({ success: false, message: "Not authenticated" });
-  }
-});
+  if (!req.user) 
+    return res.json({ success: false, user: null });
 
-// On successful login, redirect frontend to home page
-router.get("/success", (req, res) => {
-  res.redirect("http://localhost:3000/home");
-});
-
-// On login failure, send error
-router.get("/failure", (req, res) => {
-  res.status(401).send("Authentication failed");
-});
-
-router.get("/logout", (req, res) => {
-  req.logout(() => {
-    req.session.destroy(err => {
-      if (err) console.log(err);
-      res.clearCookie("connect.sid");
-      res.json({ success: true, message: "Logged out successfully" });
-    });
+  res.json({
+    success: true,
+    user: {
+      id: req.user.id,
+      username: req.user.username,
+      display_name: req.user.full_name,
+      email: req.user.email,
+      avatar_url: req.user.avatar_url,
+      bio: req.user.bio,
+      phone: req.user.phone,
+      location: req.user.location,
+      website: req.user.website,
+      provider: req.user.google_id ? "google" : (req.user.github_id ? "github" : "local"),
+    }
   });
 });
 
+// Logout route
+router.get("/logout", (req, res) => {
+  req.logout(() => {
+    req.session.destroy(() => {
+      res.clearCookie("connect.sid");
+      res.json({ success: true });
+    });
+  });
+});
 
 module.exports = router;
