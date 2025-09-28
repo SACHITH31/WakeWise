@@ -140,12 +140,6 @@ const Home = () => {
     ) : null;
   };
 
-  const eventsForSelectedDate = upcomingEvents.filter(
-    (ev) =>
-      ev.event_date === selectedDate.toISOString().slice(0, 10) ||
-      ev.reminder_date === selectedDate.toISOString().slice(0, 10)
-  );
-
   return (
     <div className="home-container">
       <h1>Welcome back{user ? `, ${user.username ?? user.displayName ?? "User"}` : ""}!</h1>
@@ -165,19 +159,24 @@ const Home = () => {
         </Link>
       </div>
 
-      {/* Separate Events & Reminders Panel */}
       <div className="home-panel home-events-reminders-panel" style={{ marginTop: 20 }}>
-        <h3>Events and Reminders for {selectedDate.toDateString()}</h3>
-        {eventsForSelectedDate.length === 0 ? (
-          <p>No events or reminders on this day.</p>
+        <h3>Events and Reminders for Today and Tomorrow</h3>
+        {upcomingEvents.length === 0 ? (
+          <p>No events or reminders for today or tomorrow.</p>
         ) : (
           <ul>
-            {eventsForSelectedDate.map((ev) => (
+            {upcomingEvents.map((ev) => (
               <li key={ev.id}>
                 {ev.title} -{" "}
-                {ev.event_date === selectedDate.toISOString().slice(0, 10)
-                  ? "Event"
-                  : `Reminder (Event: ${ev.event_date})`}
+                {ev.event_date === new Date().toISOString().slice(0, 10)
+                  ? "Event Today"
+                  : ev.event_date === new Date(new Date().setDate(new Date().getDate() + 1))
+                    .toISOString()
+                    .slice(0, 10)
+                  ? "Event Tomorrow"
+                  : ev.reminder_date === new Date().toISOString().slice(0, 10)
+                  ? `Reminder Today (Event: ${ev.event_date})`
+                  : `Reminder Tomorrow (Event: ${ev.event_date})`}
               </li>
             ))}
           </ul>
