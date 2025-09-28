@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import Calendar from "react-calendar";
@@ -7,6 +7,7 @@ import "../styles/Home.css";
 import BottomNav from "../components/BottomNav.js";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FaRegCalendarAlt } from "react-icons/fa";
 
 const Home = () => {
   const { user } = useContext(AuthContext);
@@ -19,6 +20,9 @@ const Home = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventReminderDays, setNewEventReminderDays] = useState(0);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const calendarRef = useRef(null);
 
   useEffect(() => {
     if (!user) {
@@ -66,38 +70,54 @@ const Home = () => {
       });
   }, [user, navigate]);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        setCalendarOpen(false);
+      }
+    }
+    if (calendarOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [calendarOpen]);
+
   const addEvent = () => {
     if (!newEventTitle.trim()) {
       toast.error("Event title cannot be empty");
       return;
     }
 
-   fetch("http://localhost:5000/api/events", {
-  method: "POST",
-  credentials: "include",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    title: newEventTitle.trim(),
-    event_date: selectedDate.toISOString().slice(0, 10),
-    reminder_days: parseInt(newEventReminderDays, 10) || 0,
-  }),
-})
-  .then((res) => {
-    if (!res.ok) {
-      return res.json().then((data) => {
-        throw new Error(data.message || "Unable to add event");
-      });
-    }
-    return res.json();
-  })
-  .then((newEvent) => {
-    setUpcomingEvents((prev) => [...prev, newEvent]);
-    setNewEventTitle("");
-    setNewEventReminderDays(0);
-    toast.success("Event added successfully!");
-  })
-  .catch((err) => toast.error(err.message));
-
+    fetch("http://localhost:5000/api/events", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: newEventTitle.trim(),
+        event_date: selectedDate.toISOString().slice(0, 10),
+        reminder_days: parseInt(newEventReminderDays, 10) || 0,
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((data) => {
+            throw new Error(data.message || "Unable to add event");
+          });
+        }
+        return res.json();
+      })
+      .then((newEvent) => {
+        setUpcomingEvents((prev) => [...prev, newEvent]);
+        setNewEventTitle("");
+        setNewEventReminderDays(0);
+        setCalendarOpen(false);
+        toast.success("Event added successfully!");
+      })
+      .catch((err) => toast.error(err.message));
   };
 
   const tileContent = ({ date, view }) => {
@@ -145,6 +165,25 @@ const Home = () => {
         </Link>
       </div>
 
+      {/* Separate Events & Reminders Panel */}
+      <div className="home-panel home-events-reminders-panel" style={{ marginTop: 20 }}>
+        <h3>Events and Reminders for {selectedDate.toDateString()}</h3>
+        {eventsForSelectedDate.length === 0 ? (
+          <p>No events or reminders on this day.</p>
+        ) : (
+          <ul>
+            {eventsForSelectedDate.map((ev) => (
+              <li key={ev.id}>
+                {ev.title} -{" "}
+                {ev.event_date === selectedDate.toISOString().slice(0, 10)
+                  ? "Event"
+                  : `Reminder (Event: ${ev.event_date})`}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="home-panel home-todo-summary">
         <h3>Tasks Completed Today</h3>
         <p>{completedTasks}</p>
@@ -158,48 +197,130 @@ const Home = () => {
         <p className="home-quote-text">"{quote}"</p>
       </div>
 
-      <div className="home-panel home-calendar-panel">
-        <h3>Calendar</h3>
-        <Calendar value={selectedDate} onChange={setSelectedDate} tileContent={tileContent} />
-        <div style={{ marginTop: 20 }}>
-          <input
-            type="text"
-            value={newEventTitle}
-            placeholder="New event title"
-            onChange={(e) => setNewEventTitle(e.target.value)}
-            style={{ padding: 8, width: "60%", fontSize: 16 }}
-          />
-          <input
-            type="number"
-            value={newEventReminderDays}
-            min={0}
-            onChange={(e) => setNewEventReminderDays(e.target.value)}
-            placeholder="Reminder days before"
-            style={{ padding: 8, width: "20%", fontSize: 16, marginLeft: 8 }}
-          />
-          <button onClick={addEvent} style={{ padding: "8px 20px", marginLeft: 8, fontSize: 16 }}>
-            Add Event
-          </button>
-        </div>
-        <div style={{ marginTop: 20, textAlign: "left" }}>
-          <h4>Events and Reminders for {selectedDate.toDateString()}</h4>
-          {eventsForSelectedDate.length === 0 ? (
-            <p>No events or reminders on this date.</p>
-          ) : (
-            <ul>
-              {eventsForSelectedDate.map((ev) => (
-                <li key={ev.id}>
-                  {ev.title} - {ev.event_date === selectedDate.toISOString().slice(0, 10) ? "Event" : `Reminder (Event: ${ev.event_date})`}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      {/* Floating calendar icon */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 20,
+          right: 20,
+          backgroundColor: "#007bff",
+          borderRadius: "50%",
+          width: 60,
+          height: 60,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          cursor: "pointer",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.2)",
+          zIndex: 1000,
+          color: "#fff",
+          fontSize: 30,
+        }}
+        onClick={() => setCalendarOpen(true)}
+        title="Open Calendar"
+      >
+        <FaRegCalendarAlt />
       </div>
+
+      {/* Calendar popup/modal */}
+      {calendarOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1100,
+            padding: 20,
+          }}
+        >
+          <div
+            ref={calendarRef}
+            style={{
+              position: "relative",
+              backgroundColor: "#fff",
+              borderRadius: 8,
+              padding: 20,
+              width: 350,
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <button
+              onClick={() => setCalendarOpen(false)}
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                fontWeight: "bold",
+                fontSize: 24,
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                lineHeight: 1,
+                padding: 0,
+                margin: 0,
+                color: "#555",
+              }}
+              aria-label="Close Calendar"
+            >
+              &times;
+            </button>
+
+            <Calendar value={selectedDate} onChange={setSelectedDate} tileContent={tileContent} />
+
+            <div style={{ marginTop: 15 }}>
+              <label>
+                Event Title:
+                <input
+                  type="text"
+                  value={newEventTitle}
+                  onChange={(e) => setNewEventTitle(e.target.value)}
+                  style={{ width: "100%", padding: 6, marginTop: 5 }}
+                  placeholder="Enter event title"
+                />
+              </label>
+
+              <label style={{ display: "block", marginTop: 10 }}>
+                Reminder Days:
+                <input
+                  type="number"
+                  min={0}
+                  value={newEventReminderDays}
+                  onChange={(e) => setNewEventReminderDays(e.target.value)}
+                  style={{ width: "100%", padding: 6, marginTop: 5 }}
+                  placeholder="Days before event to remind"
+                />
+              </label>
+
+              <button
+                onClick={addEvent}
+                style={{
+                  marginTop: 15,
+                  padding: "10px 15px",
+                  backgroundColor: "#007bff",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  width: "100%",
+                  fontWeight: "bold",
+                }}
+              >
+                Add Event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
 
-      {/* Toast notifications */}
       <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
