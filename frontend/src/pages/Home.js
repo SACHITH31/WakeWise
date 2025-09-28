@@ -31,28 +31,31 @@ const Home = () => {
     }
 
     fetch("http://localhost:5000/api/alarms", { credentials: "include" })
-      .then((res) => res.json())
-      .then((alarms) => {
+      .then(res => res.json())
+      .then(alarms => {
         const now = new Date();
         const upcoming = alarms
-          .map((alarm) => ({ ...alarm, timeObj: new Date(`1970-01-01T${alarm.time}`) }))
-          .filter((alarm) => alarm.timeObj > now)
+          .map(alarm => ({
+            ...alarm,
+            timeObj: new Date(`1970-01-01T${alarm.time}`)
+          }))
+          .filter(alarm => alarm.timeObj > now)
           .sort((a, b) => a.timeObj - b.timeObj);
         setNextAlarm(upcoming[0] || null);
       })
       .catch(() => setNextAlarm(null));
 
     fetch("http://localhost:5000/api/todos", { credentials: "include" })
-      .then((res) => res.json())
-      .then((todos) => {
-        const doneTasks = todos.filter((todo) => todo.done).length;
+      .then(res => res.json())
+      .then(todos => {
+        const doneTasks = todos.filter(todo => todo.done).length;
         setCompletedTasks(doneTasks);
       })
       .catch(() => setCompletedTasks(0));
 
     fetch("https://zenquotes.io/api/random")
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         if (data && data[0] && data[0].q) {
           setQuote(data[0].q);
         } else {
@@ -62,8 +65,8 @@ const Home = () => {
       .catch(() => setQuote("Stay motivated and keep going!"));
 
     fetch("http://localhost:5000/api/events/upcoming", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => setUpcomingEvents(data.upcoming ?? []))
+      .then(res => res.json())
+      .then(data => setUpcomingEvents(data.upcoming ?? []))
       .catch(() => {
         toast.error("Failed to load upcoming events");
         setUpcomingEvents([]);
@@ -102,22 +105,22 @@ const Home = () => {
         reminder_days: parseInt(newEventReminderDays, 10) || 0,
       }),
     })
-      .then((res) => {
+      .then(res => {
         if (!res.ok) {
-          return res.json().then((data) => {
+          return res.json().then(data => {
             throw new Error(data.message || "Unable to add event");
           });
         }
         return res.json();
       })
-      .then((newEvent) => {
-        setUpcomingEvents((prev) => [...prev, newEvent]);
+      .then(newEvent => {
+        setUpcomingEvents(prev => [...prev, newEvent]);
         setNewEventTitle("");
         setNewEventReminderDays(0);
         setCalendarOpen(false);
         toast.success("Event added successfully!");
       })
-      .catch((err) => toast.error(err.message));
+      .catch(err => toast.error(err.message));
   };
 
   const tileContent = ({ date, view }) => {
@@ -125,7 +128,7 @@ const Home = () => {
 
     const dateStr = date.toISOString().slice(0, 10);
     const events = upcomingEvents.filter(
-      (ev) => ev.event_date === dateStr || ev.reminder_date === dateStr
+      ev => ev.event_date === dateStr || ev.reminder_date === dateStr
     );
     return events.length > 0 ? (
       <div
@@ -140,37 +143,35 @@ const Home = () => {
     ) : null;
   };
 
-  // Compute local date strings for today and tomorrow at midnight to avoid timezone issues
+  // Calculate local dates for today, yesterday and tomorrow
   const todayDate = new Date();
-  const todayStr = new Date(
-    todayDate.getFullYear(),
-    todayDate.getMonth(),
-    todayDate.getDate()
-  )
-    .toISOString()
-    .slice(0, 10);
+  const getMidnightISO = (date) =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      .toISOString()
+      .slice(0, 10);
 
+  const todayStr = getMidnightISO(todayDate);
+  const yesterdayDate = new Date(todayDate);
+  yesterdayDate.setDate(todayDate.getDate() - 1);
+  const yesterdayStr = getMidnightISO(yesterdayDate);
   const tomorrowDate = new Date(todayDate);
   tomorrowDate.setDate(todayDate.getDate() + 1);
-  const tomorrowStr = new Date(
-    tomorrowDate.getFullYear(),
-    tomorrowDate.getMonth(),
-    tomorrowDate.getDate()
-  )
-    .toISOString()
-    .slice(0, 10);
+  const tomorrowStr = getMidnightISO(tomorrowDate);
 
-  // Filter events/reminders for today and tomorrow by date portion only
+  // Filter events/reminders excluding yesterday
   const eventsToShow = upcomingEvents.filter((ev) => {
     const eventDateStr = ev.event_date.split("T")[0];
     const reminderDateStr = ev.reminder_date ? ev.reminder_date.split("T")[0] : null;
 
-    return (
-      eventDateStr === todayStr ||
-      eventDateStr === tomorrowStr ||
-      reminderDateStr === todayStr ||
-      reminderDateStr === tomorrowStr
-    );
+    // Return true only if event or reminder is today or tomorrow but not yesterday
+    const isTodayOrTomorrow =
+      (eventDateStr === todayStr || eventDateStr === tomorrowStr) &&
+      eventDateStr !== yesterdayStr;
+    const isReminderTodayOrTomorrow =
+      (reminderDateStr === todayStr || reminderDateStr === tomorrowStr) &&
+      reminderDateStr !== yesterdayStr;
+
+    return isTodayOrTomorrow || isReminderTodayOrTomorrow;
   });
 
   return (
@@ -196,41 +197,39 @@ const Home = () => {
         </Link>
       </div>
 
-      <div
-        className="home-panel home-events-reminders-panel"
-        style={{ marginTop: 20 }}
-      >
+      <div className="home-panel home-events-reminders-panel" style={{ marginTop: 20 }}>
         <h3>Events and Reminders for Today and Tomorrow</h3>
         {eventsToShow.length === 0 ? (
           <p>No events or reminders for today or tomorrow.</p>
         ) : (
           <ul>
-  {eventsToShow.map(ev => {
-    const eventDateStr = ev.event_date.split("T")[0];
-    const reminderDateStr = ev.reminder_date ? ev.reminder_date.split("T")[0] : null;
-    const isEvent = eventDateStr === todayStr || eventDateStr === tomorrowStr;
-    const isReminder = reminderDateStr === todayStr || reminderDateStr === tomorrowStr;
+            {eventsToShow.map((ev) => {
+              const eventDateStr = ev.event_date.split("T")[0];
+              const reminderDateStr = ev.reminder_date ? ev.reminder_date.split("T")[0] : null;
+              const isReminder =
+                reminderDateStr === todayStr || reminderDateStr === tomorrowStr;
+              const isEvent = eventDateStr === todayStr || eventDateStr === tomorrowStr;
+              const dayLabel =
+                eventDateStr === todayStr
+                  ? "Today"
+                  : eventDateStr === tomorrowStr
+                  ? "Tomorrow"
+                  : reminderDateStr === todayStr
+                  ? "Today"
+                  : "Tomorrow";
 
-    return (
-      <li key={ev.id} className={isReminder ? "reminder" : ""} style={{ marginBottom: 4 }}>
-        <h4><i className="eventTitle" style={{ textTransform: "capitalize" }}>{ev.title}</i></h4> -{" "}
-        <em>
-          {isEvent && !isReminder ? // pure event
-            `${eventDateStr === todayStr ? "Today Event" : "Tomorrow Event"} (Event: ${eventDateStr})`
-            : null}
-          {isReminder && !isEvent ? // pure reminder
-            `${reminderDateStr === todayStr ? "Today Reminder" : "Tomorrow Reminder"} (Event: ${eventDateStr})`
-            : null}
-          {isEvent && isReminder ? // both
-            `${eventDateStr === todayStr ? "Today Event" : "Tomorrow Event"} & `
-            + `${reminderDateStr === todayStr ? "Today Reminder" : "Tomorrow Reminder"} (Event: ${eventDateStr})`
-            : null}
-        </em>
-      </li>
-    );
-  })}
-</ul>
-
+              return (
+                <li key={ev.id} className={isReminder ? "reminder" : ""} style={{ marginBottom: 4 }}>
+                  <h4><i style={{ textTransform: "capitalize"}}>{ev.title}</i></h4> -{" "}
+                  <em>
+                    {isEvent ? `${dayLabel} Event` : ""}
+                    {isEvent && isReminder ? " & " : ""}
+                    {isReminder ? `${dayLabel} Reminder (Event: ${eventDateStr})` : ""}
+                  </em>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
 
@@ -330,7 +329,7 @@ const Home = () => {
 
                 const dateStr = date.toISOString().slice(0, 10);
                 const events = upcomingEvents.filter(
-                  (ev) => ev.event_date === dateStr || ev.reminder_date === dateStr
+                  ev => ev.event_date === dateStr || ev.reminder_date === dateStr
                 );
                 return events.length > 0 ? (
                   <div
@@ -352,7 +351,7 @@ const Home = () => {
                 <input
                   type="text"
                   value={newEventTitle}
-                  onChange={(e) => setNewEventTitle(e.target.value)}
+                  onChange={e => setNewEventTitle(e.target.value)}
                   style={{ width: "100%", padding: 6, marginTop: 5 }}
                   placeholder="Enter event title"
                 />
@@ -364,7 +363,7 @@ const Home = () => {
                   type="number"
                   min={0}
                   value={newEventReminderDays}
-                  onChange={(e) => setNewEventReminderDays(e.target.value)}
+                  onChange={e => setNewEventReminderDays(e.target.value)}
                   style={{ width: "100%", padding: 6, marginTop: 5 }}
                   placeholder="Days before event to remind"
                 />
