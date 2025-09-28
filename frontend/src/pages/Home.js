@@ -140,18 +140,27 @@ const Home = () => {
     ) : null;
   };
 
-  // Define today's and tomorrow's date strings (local date)
-  const getLocalDateString = (date) => {
-    const tzOffset = date.getTimezoneOffset() * 60000;
-    return new Date(date - tzOffset).toISOString().slice(0, 10);
-  };
+  // Compute local date strings for today and tomorrow at midnight to avoid timezone issues
+  const todayDate = new Date();
+  const todayStr = new Date(
+    todayDate.getFullYear(),
+    todayDate.getMonth(),
+    todayDate.getDate()
+  )
+    .toISOString()
+    .slice(0, 10);
 
-  const todayStr = getLocalDateString(new Date());
-  const tomorrowDate = new Date();
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tomorrowStr = getLocalDateString(tomorrowDate);
+  const tomorrowDate = new Date(todayDate);
+  tomorrowDate.setDate(todayDate.getDate() + 1);
+  const tomorrowStr = new Date(
+    tomorrowDate.getFullYear(),
+    tomorrowDate.getMonth(),
+    tomorrowDate.getDate()
+  )
+    .toISOString()
+    .slice(0, 10);
 
-  // Filter events & reminders only for today and tomorrow by comparing only local date parts
+  // Filter events/reminders for today and tomorrow by date portion only
   const eventsToShow = upcomingEvents.filter((ev) => {
     const eventDateStr = ev.event_date.split("T")[0];
     const reminderDateStr = ev.reminder_date ? ev.reminder_date.split("T")[0] : null;
@@ -166,7 +175,11 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      <h1>Welcome back{user ? `, ${user.username ?? user.displayName ?? "User"}` : ""}!</h1>
+      <h1>
+        Welcome back
+        {user ? `, ${user.username ?? user.displayName ?? "User"}` : ""}
+        !
+      </h1>
 
       <div className="home-panel home-alarm-panel">
         <h3>Next Alarm</h3>
@@ -183,7 +196,10 @@ const Home = () => {
         </Link>
       </div>
 
-      <div className="home-panel home-events-reminders-panel" style={{ marginTop: 20 }}>
+      <div
+        className="home-panel home-events-reminders-panel"
+        style={{ marginTop: 20 }}
+      >
         <h3>Events and Reminders for Today and Tomorrow</h3>
         {eventsToShow.length === 0 ? (
           <p>No events or reminders for today or tomorrow.</p>
@@ -191,7 +207,9 @@ const Home = () => {
           <ul>
             {eventsToShow.map((ev) => {
               const isReminder =
-                ev.reminder_date && (ev.reminder_date.split("T")[0] === todayStr || ev.reminder_date.split("T")[0] === tomorrowStr);
+                ev.reminder_date &&
+                (ev.reminder_date.split("T")[0] === todayStr ||
+                  ev.reminder_date.split("T")[0] === tomorrowStr);
               const eventDay =
                 ev.event_date === todayStr
                   ? "Event Today"
